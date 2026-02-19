@@ -2,6 +2,12 @@
 FastAPI + SQLAlchemy MVP (SQLite backend)
 """
 
+from fastapi import Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
+
 from contextlib import asynccontextmanager
 from typing import Generator, List
 
@@ -88,6 +94,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Mount /static
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Templates directory
+templates = Jinja2Templates(directory="templates")
 
 # ─────────────────────────────────────────────────────────────
 # Routes (CRUD)
@@ -157,6 +168,40 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Item deleted"}
 
+
+@app.get("/items/ui", response_class=HTMLResponse)
+async def items_page(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    items = db.query(Item).all()
+    return templates.TemplateResponse(
+        "items_list.html",
+        {
+            "request": request,
+            "items": items,
+        },
+    )
+
+
+@app.post("/items/ui")
+async def create_item_from_form(
+    name: str = Form(...),
+    description: str = Form(""),
+    price: float = Form(...),
+    db: Session = Depends(get_db),
+):
+    db_item = Item(
+        name=name,
+        description=description,
+        price=price,
+    )
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+
+    # Redirect back to the list page (303 to avoid form resubmit)
+    return RedirectResponse(url="/items/ui", status_code=303)
 
 if __name__ == "__main__":
     import uvicorn

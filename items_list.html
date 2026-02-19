@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Items List{% endblock %}
+
+{% block content %}
+  <h2>Items</h2>
+
+  {% if items %}
+    <ul>
+      {% for item in items %}
+        <li>
+          <strong>{{ item.name }}</strong> – ${{ "%.2f"|format(item.price) }}
+          <br>
+          <small>{{ item.description }}</small>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No items in the database yet.</p>
+  {% endif %}
+
+  <hr>
+
+  <h3>Add New Item</h3>
+  <form method="post" action="/items/ui">
+    <label>
+      Name:
+      <input type="text" name="name" required>
+    </label>
+    <br>
+    <label>
+      Description:
+      <input type="text" name="description">
+    </label>
+    <br>
+    <label>
+      Price:
+      <input type="number" name="price" step="0.01" required>
+    </label>
+    <br><br>
+    <button type="submit">Create Item</button>
+  </form>
+{% endblock %}
